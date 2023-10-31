@@ -1,0 +1,69 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dotnet-example-app
+  namespace: tutorial
+  labels:
+    app: dotnet-example-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: dotnet-example-app
+  template:
+    metadata:
+      labels:
+        app: dotnet-example-app
+    spec:
+      containers:
+      - name: dotnet-example-app
+        image:  mo-dev:5000/dotnet-example-app:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 80
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "256m"
+          limits:
+            memory: "256Mi"
+            cpu: "512m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: dotnet-example-app
+  namespace: tutorial
+spec:
+  selector:
+    app: dotnet-example-app
+  ports:
+    - protocol: TCP
+      port: 443
+      targetPort: 80
+  type: ClusterIP
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: dotnet-example-app
+  namespace: tutorial
+  annotations:
+    nginx.ingress.kubernetes.io/secure-backends: "false"
+spec:
+  ingressClassName: nginx
+  rules:
+  - host: app1.192-168-1-106.nip.io
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: dotnet-example-app
+            port: 
+              number: 443
+  tls:
+  - hosts:
+    - app1.192-168-1-106.nip.io
+    secretName: tutorial-tls-secret
